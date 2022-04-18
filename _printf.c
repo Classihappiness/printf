@@ -1,54 +1,50 @@
-#include <unistd.h>
 #include "main.h"
-#include <stdarg.h>
-
+/**
+ * _printf - formatted output conversion and print data.
+ * @format: input string.
+ *
+ * Return: number of chars printed.
+ */
 int _printf(const char *format, ...)
 {
-        int i, j, d;
-        int total = 0;
-        va_list args;
-        char c, f;
-        char *s;
+	unsigned int i = 0, len = 0, ibuf = 0;
+	va_list arguments;
+	int (*function)(va_list, char *, unsigned int);
+	char *buffer;
 
-        va_start(args, format);
-        for (i = 0; format[i] != '\0'; i++)
-        {
-                if (format[i] == '%')
-                {
-                        i++;
-                        f = format[i];
-                        if (f == '%')
-                        {
-                                write(1, "%", 1);
-                                total++;
-                        }
-                        else if (f == 'd' || f == 'i')
-                        {
-                                d = va_arg(args, int);
-                                total += print_int(d);
-                        }
-                        else if (f == 's')
-                        {
-                                s = va_arg(args, char *);
-                                for (j = 0; s[j] != '\0'; j++)
-                                {
-                                        write(1, &s[j], 1);
-                                        total++;
-                                }
-                        }
-                        else if (f == 'c')
-                        {
-                                c = va_arg(args, int);
-                                write(1, &c, 1);
-                                total++;
-                        }
-                }
-                else
-                {
-                        write(1, &format[i], 1);
-                        total++;
-                }
-        }
-        va_end(args);
-        return total;
+	va_start(arguments, format), buffer = malloc(sizeof(char) * 1024);
+	if (!format || !buffer || (format[i] == '%' && !format[i + 1]))
+		return (-1);
+	if (!format[i])
+		return (0);
+	for (i = 0; format && format[i]; i++)
+	{
+		if (format[i] == '%')
+		{
+			if (format[i + 1] == '\0')
+			{	print_buf(buffer, ibuf), free(buffer), va_end(arguments);
+				return (-1);
+			}
+			else
+			{	function = get_print_func(format, i + 1);
+				if (function == NULL)
+				{
+					if (format[i + 1] == ' ' && !format[i + 2])
+						return (-1);
+					handl_buf(buffer, format[i], ibuf), len++, i--;
+				}
+				else
+				{
+					len += function(arguments, buffer, ibuf);
+					i += ev_print_func(format, i + 1);
+				}
+			} i++;
+		}
+		else
+			handl_buf(buffer, format[i], ibuf), len++;
+		for (ibuf = len; ibuf > 1024; ibuf -= 1024)
+			;
+	}
+	print_buf(buffer, ibuf), free(buffer), va_end(arguments);
+	return (len);
 }
